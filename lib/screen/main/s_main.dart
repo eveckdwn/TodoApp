@@ -1,3 +1,4 @@
+import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 import 'package:fast_app_base/screen/main/tab/tab_item.dart';
 import 'package:fast_app_base/screen/main/tab/tab_navigator.dart';
 import 'package:flutter/material.dart';
@@ -13,8 +14,8 @@ class MainScreen extends StatefulWidget {
 }
 
 class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMixin {
-  TabItem _currentTab = TabItem.home;
-  final tabs = [TabItem.home, TabItem.favorite];
+  TabItem _currentTab = TabItem.todo;
+  final tabs = [TabItem.todo, TabItem.search];
   final List<GlobalKey<NavigatorState>> navigatorKeys = [];
 
   int get _currentIndex => tabs.indexOf(_currentTab);
@@ -46,6 +47,12 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
             child: pages,
           ),
         ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+            context.holder.addTodo();
+          },
+          child: const Icon(EvaIcons.plus),
+        ),
         bottomNavigationBar: _buildBottomNavigationBar(context),
       ),
     );
@@ -67,8 +74,8 @@ class MainScreenState extends State<MainScreen> with SingleTickerProviderStateMi
     final isFirstRouteInCurrentTab =
         (await _currentTabNavigationKey.currentState?.maybePop() == false);
     if (isFirstRouteInCurrentTab) {
-      if (_currentTab != TabItem.home) {
-        _changeTab(tabs.indexOf(TabItem.home));
+      if (_currentTab != TabItem.todo) {
+        _changeTab(tabs.indexOf(TabItem.todo));
         return false;
       }
     }

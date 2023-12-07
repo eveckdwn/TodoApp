@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'w_todo_list.dart';
 
-class TodoFragment extends StatefulWidget {
+class TodoFragment extends StatefulWidget{
   const TodoFragment({super.key});
 
   @override
@@ -27,7 +27,7 @@ class _TodoFragmentState extends State<TodoFragment> {
             ],
           ),
           Expanded(
-            child: const TodoList().pSymmetric(h: 15),
+            child: TodoList().pSymmetric(h: 15),
           ),
         ],
       ),

@@ -6,11 +6,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../screen/main/write/d_write_todo.dart';
 import 'bloc/bloc_status.dart';
 import 'bloc/todo_bloc_state.dart';
+import 'bloc/todo_event.dart';
 
-class TodoCubit extends Cubit<TodoBlocState> {
-  TodoCubit() : super(const TodoBlocState(BlocStatus.initial, <Todo>[]));
+class TodoBloc extends Bloc<TodoEvent, TodoBlocState> {
+  TodoBloc() : super(const TodoBlocState(BlocStatus.initial, <Todo>[])){
+    on<TodoAddEvent>(_addTodo);
+    // on<TodoAddEvent>(_addTodo, transformer: ); //  bloc_concurrency package를 이용하면 유용할 수 있음.
+    on<TodoContentUpdateEvent>(_editTodo);
+    on<TodoStatusUpdateEvent>(_changeTodoStatus);
+    on<TodoRemovedEvent>(_removeTodo);
+  }
 
-  void addTodo() async {
+  void _addTodo(TodoAddEvent event, Emitter<TodoBlocState> emit) async {
     final result = await WriteTodoDialog().show();
     if (result != null) {
       final copiedOldTodoList = List.of(state.todoList);
@@ -22,12 +29,13 @@ class TodoCubit extends Cubit<TodoBlocState> {
           createdTime: DateTime.now(),
           status: TodoStatus.incomplete,
       ));
-      emitNewList(copiedOldTodoList);
+      emitNewList(copiedOldTodoList, emit);
     }
   }
 
-  void changeTodoStatus(Todo todo) async {
+  void _changeTodoStatus(TodoStatusUpdateEvent event, Emitter<TodoBlocState> emit) async {
     final copiedOldTodoList = List.of(state.todoList);
+    final todo = event.updatedTodo;
     final todoIndex = copiedOldTodoList.indexWhere((element) => element.id == todo.id);
 
     TodoStatus status = todo.status;
@@ -43,27 +51,28 @@ class TodoCubit extends Cubit<TodoBlocState> {
         });
     }
     copiedOldTodoList[todoIndex] = todo.copyWith(status: status);
-    emitNewList(copiedOldTodoList);
+    emitNewList(copiedOldTodoList, emit);
   }
 
 
 
-  void editTodo(Todo todo) async {
+  void _editTodo(TodoContentUpdateEvent event, Emitter<TodoBlocState> emit) async {
+    final todo = event.updatedTodo;
     final result = await WriteTodoDialog(todoForEdit: todo).show();
     if (result != null) {
       final copiedOldTodoList = List.of(state.todoList);
       copiedOldTodoList[copiedOldTodoList.indexOf(todo)] = todo.copyWith(title: result.text, dueDate: result.dateTime, modifiedTime: DateTime.now());
-      emitNewList(copiedOldTodoList);
+      emitNewList(copiedOldTodoList, emit);
     }
   }
 
-  void removeTodo(Todo todo) {
+  void _removeTodo(TodoRemovedEvent event, Emitter<TodoBlocState> emit) {
     final copiedOldTodoList = List.of(state.todoList);
-    copiedOldTodoList.removeWhere((element) => element.id == todo.id);
-    emitNewList(copiedOldTodoList);
+    copiedOldTodoList.removeWhere((element) => element.id == event.removedTodo.id);
+    emitNewList(copiedOldTodoList, emit);
   }
 
-  void emitNewList(List<Todo> copiedOldTodoList) {
+  void emitNewList(List<Todo> copiedOldTodoList, Emitter<TodoBlocState> emit) {
     emit(state.copyWith(todoList: copiedOldTodoList));
   }
 }

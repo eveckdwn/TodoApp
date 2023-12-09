@@ -12,6 +12,7 @@ import '../../common/common.dart';
 import '../../common/language/language.dart';
 import '../../common/theme/theme_util.dart';
 import '../../common/widget/w_mode_switch.dart';
+import '../../data/memory/todo_data_holder.dart';
 import 's_main.dart';
 
 class MenuDrawer extends ConsumerStatefulWidget {
@@ -111,7 +112,7 @@ class _MenuDrawerState extends ConsumerState<MenuDrawer> {
           _MenuWidget(
             '화면 띄우기',
             onTap: () async {
-              Nav.push(MainScreenWrapper());
+              Nav.push(const MainScreenWrapper());
             },
           ),
           const Line(),

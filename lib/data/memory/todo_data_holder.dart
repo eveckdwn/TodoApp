@@ -15,7 +15,7 @@ final todoDataProvider = StateNotifierProvider<TodoDataHolder, List<Todo>>((ref)
 });
 
 class TodoDataHolder extends StateNotifier<List<Todo>> {
-  TodoDataHolder(): super([]);
+  TodoDataHolder() : super([]);
 
   void changeTodoStatus(Todo todo) async {
     switch (todo.status) {
@@ -29,25 +29,24 @@ class TodoDataHolder extends StateNotifier<List<Todo>> {
           todo.status = TodoStatus.incomplete;
         });
     }
-
     state = List.of(state);
   }
 
   void addTodo() async {
     final result = await WriteTodoDialog().show();
     if (result != null) {
-      //  mounted: 현재 스크린이 살아있는지를 체크할 수 있음.
       state.add(Todo(
-          id: DateTime.now().millisecondsSinceEpoch,
-          title: result.text,
-          dueDate: result.dateTime));
+        id: DateTime.now().millisecondsSinceEpoch,
+        title: result.text,
+        dueDate: result.dateTime,
+      ));
       state = List.of(state);
     }
   }
 
   void editTodo(Todo todo) async {
     final result = await WriteTodoDialog(todoForEdit: todo).show();
-    if(result != null) {
+    if (result != null) {
       todo.title = result.text;
       todo.dueDate = result.dateTime;
       state = List.of(state);

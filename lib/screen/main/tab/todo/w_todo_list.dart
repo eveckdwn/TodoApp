@@ -1,19 +1,18 @@
 import 'package:fast_app_base/common/common.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'w_todo_item.dart';
 
-class TodoList extends StatelessWidget with TodoDataProvider {
-  TodoList({super.key});
+class TodoList extends ConsumerWidget {
+  const TodoList({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Obx(
-      () => todoData.todoList.isEmpty
-          ? '할 일을 작성해보세요.'.text.size(30).makeCentered()
-          : Column(
-              children: todoData.todoList.map((e) => TodoItem(e)).toList(),
-            ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final todoList = ref.watch(todoDataProvider);
+    return todoList.isEmpty
+        ? '할 일을 작성해보세요.'.text.size(30).makeCentered()
+        : Column(
+      children: todoList.map((e) => TodoItem(e)).toList(),
     );
   }
 }

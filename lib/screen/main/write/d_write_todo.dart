@@ -1,96 +1,121 @@
 import 'package:fast_app_base/common/common.dart';
 import 'package:fast_app_base/common/dart/extension/datetime_extension.dart';
-import 'package:fast_app_base/common/util/app_keyboard_util.dart';
+import 'package:fast_app_base/common/hooks/use_focused.dart';
 import 'package:fast_app_base/common/widget/scaffold/bottom_dialog_scaffold.dart';
-import 'package:fast_app_base/data/memory/vo_todo.dart';
+import 'package:fast_app_base/common/widget/w_round_button.dart';
 import 'package:fast_app_base/screen/main/write/vo_write_to_result.dart';
 import 'package:flutter/material.dart';
-import 'package:nav/dialog/dialog.dart';
-import 'package:after_layout/after_layout.dart';
+import 'package:nav_hooks/dialog/hook_consumer_dialog.dart';
+import 'package:nav_hooks/dialog/hook_dialog.dart';
 
-import '../../../common/widget/w_round_button.dart';
+import '../../../common/hooks/use_second_timer.dart';
+import '../../../common/hooks/use_show_keyboard.dart';
 import '../../../common/widget/w_rounded_container.dart';
+import '../../../data/memory/vo_todo.dart';
 
-class WriteTodoDialog extends DialogWidget<WriteTodoResult> {
+class WriteTodoDialog extends HookConsumerDialogWidget<WriteTodoResult> {
   final Todo? todoForEdit;
-  WriteTodoDialog({super.key, this.todoForEdit});
+
+  WriteTodoDialog({this.todoForEdit, super.key});
 
   @override
-  DialogState<WriteTodoDialog> createState() => _WriteTodoDialogState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedDate = useState<DateTime>(DateTime.now());
+    final textController = useTextEditingController();
+    final textController2 = useTextEditingController();
 
-class _WriteTodoDialogState extends DialogState<WriteTodoDialog>
-    with AfterLayoutMixin {
-  DateTime _selectedDate = DateTime.now();
-  final textController = TextEditingController();
-  final node = FocusNode();
+    useMemoized(() {
+      if (todoForEdit != null) {
+        selectedDate.value = todoForEdit!.dueDate;
+        textController.text = todoForEdit!.title;
+      }
+    });
 
-  bool get isEditMode => widget.todoForEdit != null;
+    final node = useFocusNode();
+    final node2 = useFocusNode();
 
-  @override
-  void initState() {
-    if(widget.todoForEdit != null){
-      _selectedDate = widget.todoForEdit!.dueDate;
-      textController.text = widget.todoForEdit!.title;
-    }
+    showKeyboard(node);
 
-    super.initState();
-  }
+    final isOneFocused = useIsFocused(node);
+    final isTwoFocused = useIsFocused(node2);
+    final secondTime = useTimerSecond();
 
-  @override
-  Widget build(BuildContext context) {
+    final tenTimesCount = useMemoized(() {
+      print('tenTimesCount');
+      print(secondTime);
+      print(secondTime ~/ 10);
+      return secondTime ~/ 10;
+    }, [secondTime]);
+
+    final twentyTimesCount =useMemoized(() {
+      print('twentyTimesCount');
+      print(tenTimesCount ~/ 2);
+      return tenTimesCount ~/ 2;
+    }, [tenTimesCount]);
+
+    final onSelectDate = useCallback(() async {
+      final date = await showDatePicker(
+        context: context,
+        initialDate: selectedDate.value,
+        firstDate: DateTime.now().subtract(const Duration(days: 365)),
+        lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
+      );
+      if (date != null) {
+        selectedDate.value = date;
+      }
+    });
+
     return BottomDialogScaffold(
-        body: RoundedContainer(
-            color: context.backgroundColor,
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    '할일을 작성해주세요.'.text.size(18).bold.make(),
-                    spacer,
-                    _selectedDate.formattedDate.text.make(),
-                    IconButton(
-                      onPressed: _selectDate,
-                      icon: const Icon(Icons.calendar_month),
-                    ),
-                  ],
-                ),
-                height20,
-                Row(
-                  children: [
-                    Expanded(
-                        child: TextField(
-                      focusNode: node,
-                      controller: textController,
-                    )),
-                    RoundButton(
-                        text: isEditMode? '완료' : '추가',
-                        onTap: () {
-                          widget.hide(WriteTodoResult(_selectedDate, textController.text));
-                        }),
-                  ],
-                ),
-              ],
-            )));
-  }
-
-  void _selectDate() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
+      body: RoundedContainer(
+          padding: const EdgeInsets.all(20),
+          color: isOneFocused
+              ? AppColors.faleBlue
+              : isTwoFocused
+              ? AppColors.salmon
+              : AppColors.grey,
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  '할일을 작성해주세요. $twentyTimesCount'.text.size(16).bold.make(),
+                  spacer,
+                  selectedDate.value.formattedDate.text.make(),
+                  IconButton(onPressed: onSelectDate, icon: const Icon(Icons.calendar_month))
+                ],
+              ),
+              height20,
+              Row(
+                children: [
+                  Expanded(
+                      child: TextField(
+                        focusNode: node,
+                        controller: textController,
+                      )),
+                  RoundButton(
+                      text: isEditMode ? '완료' : '추가',
+                      onTap: () {
+                        hide(WriteTodoResult(selectedDate.value, textController.text));
+                      }),
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(
+                      child: TextField(
+                        focusNode: node2,
+                        controller: textController2,
+                      )),
+                  RoundButton(
+                      text: isEditMode ? '완료' : '추가',
+                      onTap: () {
+                        hide(WriteTodoResult(selectedDate.value, textController.text));
+                      }),
+                ],
+              )
+            ],
+          )),
     );
-
-    if (date != null) {
-      setState(() {
-        _selectedDate = date;
-      });
-    }
   }
 
-  @override
-  FutureOr<void> afterFirstLayout(BuildContext context) {
-    AppKeyboardUtil.show(context, node);
-  }
+  bool get isEditMode => todoForEdit != null;
 }
